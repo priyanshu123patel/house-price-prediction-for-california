@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>House Price Studio</title>
+    <link rel="icon" type="image/svg+xml" href="../templates/image.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="page-shell">
+        <div class="ambient ambient-one"></div>
+        <div class="ambient ambient-two"></div>
+
+        <main class="layout">
+            <section class="hero card">
+                <div class="eyebrow">California Housing Predictor</div>
+                <div class="hero-grid">
+                    <div>
+                        <h1>Predict home value with a clean, local experience.</h1>
+                        <p class="lede">Enter the census-based testing data, review the model notes, and get a house price prediction from the saved <strong>house_price_model.pkl</strong> in one screen.</p>
+                        <div class="hero-pills">
+                            <span>Responsive layout</span>
+                            <span>Linear regression</span>
+                            <span>Built for real inputs</span>
+                        </div>
+                    </div>
+                    <div class="hero-result">
+                        {% if prediction %}
+                        <div class="result-label">Latest prediction</div>
+                        <div class="result-value">${{ '{:,.2f}'.format(prediction.dollars) }}</div>
+                        <div class="result-note">Estimated median value from your testing data</div>
+                        {% else %}
+                        <div class="result-label">Ready to predict</div>
+                        <div class="result-value muted">Awaiting inputs</div>
+                        <div class="result-note">Use the form below to generate a forecast</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </section>
+
+            {% if error %}
+            <section class="alert card">{{ error }}</section>
+            {% endif %}
+
+            <section class="stats-grid">
+                <article class="stat card">
+                    <span>Accuracy</span>
+                    <strong>{{ '{:.2f}'.format(metrics.accuracy) }}%</strong>
+                    <small>Displayed as an R²-based accuracy score</small>
+                </article>
+                <article class="stat card">
+                    <span>MAE</span>
+                    <strong>{{ '{:.4f}'.format(metrics.mae) }}</strong>
+                    <small>Mean absolute error on the test split</small>
+                </article>
+                <article class="stat card">
+                    <span>MSE</span>
+                    <strong>{{ '{:.4f}'.format(metrics.mse) }}</strong>
+                    <small>Mean squared error on the test split</small>
+                </article>
+                <article class="stat card">
+                    <span>R² score</span>
+                    <strong>{{ '{:.4f}'.format(metrics.r2) }}</strong>
+                    <small>Model fit on the held-out test data</small>
+                </article>
+            </section>
+
+            <section class="content-grid">
+                <form class="card form-card" action="{{ url_for('predict') }}" method="post">
+                    <div class="section-heading">
+                        <div>
+                            <div class="eyebrow">Testing data</div>
+                            <h2>Enter the feature values</h2>
+                        </div>
+                        <p>Use the same eight fields the model was trained on. You can keep the suggested defaults or replace them with your own test case.</p>
+                    </div>
+
+                    <div class="input-grid">
+                        {% for feature in features %}
+                        <label class="field">
+                            <span>{{ feature.label }}</span>
+                            <input
+                                type="number"
+                                name="{{ feature.name }}"
+                                value="{{ form_values[feature.name] }}"
+                                step="{{ feature.step }}"
+                                required>
+                            <small>{{ feature.hint }}</small>
+                        </label>
+                        {% endfor %}
+                    </div>
+
+                    <button type="submit" class="button">Generate prediction</button>
+
+                    {% if prediction %}
+                    <div class="prediction-panel">
+                        <div>
+                            <span class="prediction-kicker">Predicted house value</span>
+                            <strong>${{ '{:,.2f}'.format(prediction.dollars) }}</strong>
+                        </div>
+                        <div>
+                            <span class="prediction-kicker">Model output</span>
+                            <strong>{{ '{:.3f}'.format(prediction.units) }} in $100k units</strong>
+                        </div>
+                    </div>
+                    {% endif %}
+                </form>
+
+                <aside class="side-stack">
+                    <article class="card info-card">
+                        <div class="section-heading compact">
+                            <div>
+                                <div class="eyebrow">EDA summary</div>
+                                <h2>What the dataset tells us</h2>
+                            </div>
+                        </div>
+                        <div class="info-list">
+                            <div><span>Rows</span><strong>{{ eda.dataset_rows }}</strong></div>
+                            <div><span>Features</span><strong>{{ eda.feature_count }}</strong></div>
+                            <div><span>Target</span><strong>{{ eda.target }}</strong></div>
+                            <div><span>Missing data</span><strong>{{ eda.missing }}</strong></div>
+                            <div><span>Split</span><strong>{{ eda.split }}</strong></div>
+                        </div>
+                    </article>
+
+                    <article class="card info-card warm">
+                        <div class="section-heading compact">
+                            <div>
+                                <div class="eyebrow">Model notes</div>
+                                <h2>Training snapshot</h2>
+                            </div>
+                        </div>
+                        <p>{{ model_summary.purpose }}</p>
+                        <div class="info-list compact-list">
+                            <div><span>Model</span><strong>{{ model_summary.type }}</strong></div>
+                            <div><span>Artifact</span><strong>{{ model_summary.artifact }}</strong></div>
+                        </div>
+                    </article>
+
+                    <article class="card info-card deep">
+                        <div class="section-heading compact">
+                            <div>
+                                <div class="eyebrow">Metrics</div>
+                                <h2>Printed evaluation scores</h2>
+                            </div>
+                        </div>
+                        <div class="mini-metrics">
+                            <div>
+                                <span>Accuracy</span>
+                                <strong>{{ '{:.2f}'.format(metrics.accuracy) }}%</strong>
+                            </div>
+                            <div>
+                                <span>MAE</span>
+                                <strong>{{ '{:.4f}'.format(metrics.mae) }}</strong>
+                            </div>
+                            <div>
+                                <span>MSE</span>
+                                <strong>{{ '{:.4f}'.format(metrics.mse) }}</strong>
+                            </div>
+                            <div>
+                                <span>R²</span>
+                                <strong>{{ '{:.4f}'.format(metrics.r2) }}</strong>
+                            </div>
+                        </div>
+                    </article>
+                </aside>
+            </section>
+        </main>
+    </div>
+</body>
+</html>
