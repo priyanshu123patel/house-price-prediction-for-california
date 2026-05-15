@@ -1,4 +1,13 @@
-flask
-pandas
-numpy
-scikit-learn
+Flask>=2.2.5
+pandas>=1.5.3
+numpy>=1.24.3
+scikit-learn>=1.2.2
+# Model/joblib runtime (scikit-learn may pull joblib, but pinning helps reproducibility)
+joblib>=1.2.0
+# Optional production WSGI servers (choose one for deployment):
+gunicorn>=20.1.0  # Recommended for Linux/Docker deployments
+waitress>=2.1.0  # Recommended for Windows deployments
+# Environment variable loader
+python-dotenv>=1.0.0
+# Optional: scientific stack if your model depends on it
+scipy>=1.10.0
